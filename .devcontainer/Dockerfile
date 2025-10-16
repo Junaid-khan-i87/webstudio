@@ -15,8 +15,15 @@ ENV PATH=/usr/local/bin:${PATH}
 # [Optional] Uncomment if you want to install more global node modules
 # RUN su node -c "npm install -g <your-package-list-here>"
 
+# Install dos2unix and convert line endings
+RUN apt-get update && apt-get install -y dos2unix
+
 COPY library-scripts/*.sh /tmp/library-scripts/
 
+# Convert line endings to Unix format
+RUN find /tmp/library-scripts/ -type f -name "*.sh" -exec dos2unix {} +
+
 ENV DOCKER_BUILDKIT=1
-RUN apt-get update
+
+# Install Docker in Docker
 RUN /bin/bash /tmp/library-scripts/docker-in-docker-debian.sh

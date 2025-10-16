@@ -92,48 +92,40 @@ export default defineConfig(({ mode }) => {
       "process.env.NODE_ENV": JSON.stringify(mode),
     },
     server: {
-      // Service-to-service OAuth token call requires a specified host for the wstd.dev domain
-      host: "wstd.dev",
-      // Needed for SSL
-      proxy: {},
-
-      https: {
-        key: readFileSync("../../https/privkey.pem"),
-        cert: readFileSync("../../https/fullchain.pem"),
-      },
-      cors: ((
-        req: IncomingMessage,
-        callback: (error: Error | null, options: CorsOptions | null) => void
-      ) => {
+      // Allow connections from any host
+      host: true,
+      // Enable CORS for development
+      cors: ((req: IncomingMessage, callback: (error: Error | null, options: CorsOptions | null) => void) => {
         // Handle CORS preflight requests in development to mimic Remix production behavior
         if (req.method === "OPTIONS" || req.method === "POST") {
           if (req.headers.origin != null && req.url != null) {
-            const url = new URL(req.url, `https://${req.headers.host}`);
+            const url = new URL(req.url, `http://${req.headers.host}`);
 
             // Allow CORS for /builder-logout path when requested from the authorization server
-            if (url.pathname === "/builder-logout" && isBuilderUrl(url.href)) {
-              return callback(null, {
-                origin: getAuthorizationServerOrigin(url.href),
-                preflightContinue: false,
+            if (url.pathname === "/builder-logout") {
+              callback(null, {
+                origin: getAuthorizationServerOrigin(),
                 credentials: true,
+                allowedHeaders: ["Content-Type"],
               });
+              return;
             }
-          }
-
-          if (req.method === "OPTIONS") {
-            // Respond with method not allowed for other preflight requests
-            return callback(null, {
-              preflightContinue: false,
-              optionsSuccessStatus: 405,
-            });
           }
         }
 
-        // Disable CORS for all other requests
-        return callback(null, {
-          origin: false,
+        // Default CORS for all other requests
+        callback(null, {
+          origin: true, // Allow all origins in development
+          credentials: true,
         });
-      }) as never,
+      }) as any,
+      // Enable HMR
+      hmr: {
+        host: 'localhost',
+        port: 5173
+      },
+      // Proxy configuration if needed
+      proxy: {},
     },
     envPrefix: "GITHUB_",
   };

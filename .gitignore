@@ -23,6 +23,10 @@ _build
 !https/*.pem
 /.idea
 
+.pnpm-store/
+
+
+
 # logs
 npm-debug.log*
 yarn-debug.log*
